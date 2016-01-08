@@ -1098,6 +1098,8 @@ public class FxHtml {
     boolean bCommentaire = false;
     // Indique si on est dans un tag
     boolean bTag = false,  bTagName = false;
+    // Indique si on est sur un tag de fin
+    boolean bTagEnd = false;
     // Indique si on est dans un text Data
     boolean bTxtData = false;
     // Caracteres lu dans str
@@ -1131,12 +1133,14 @@ public class FxHtml {
 		        szTxt = "";
             bCommentaire = false;
             bTagName = false;
+            bTagEnd = false;
             bTag = false;
           }
           // Teste si c'est un DocType
           else if (szTagName.toUpperCase().equals("DOCTYPE")) {
             bCommentaire = false;
 	          bTagName = false;
+	            bTagEnd = false;
 	          bTag = true;
 	          szTag += szTagName;
             szTxt = "";
@@ -1144,6 +1148,7 @@ public class FxHtml {
           // Teste si le début de la balise de debut
           else if (bTagName && szTagName.equals("--")) {
           	bTagName = false;
+            bTagEnd = false;
 	          bTag = true;
 	          szTag += szTagName;
             szTxt = "";
@@ -1151,14 +1156,14 @@ public class FxHtml {
 	      }
 	      else if ( bTxtData ) {
 	      	szTxt += c;
-	      	if (c == '>' && cOld1 == ']' && cOld2 == ']') {
+	      	if ((c == '>' && cOld1 == ']' && cOld2 == ']') || szTxt.endsWith("]]&gt;")) {
 	      		bTxtData = false;
 	      	}
 	      }
 	      else {
 	      	if ( cOld1 == '<' ) {
-	      		if (("abcdefghijklmnopqrstuvwxyz".indexOf(c)<0) &&
-	      				("ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(c)<0) &&
+      			if (("abcdefghijklmnopqrstuvwxyz0123456789".indexOf(c)<0) &&
+	      				("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".indexOf(c)<0) &&
 	      				(c!='/')) {
 	      			bTag = false;
 	      		}
@@ -1169,6 +1174,7 @@ public class FxHtml {
 
 		          bTag = true;
 		          bTagName = true;
+		          bTagEnd = (c == '/');
 
 			      	if (!szTagName.equals("")) {
 		  	      	ret.add(new BeanTag(Integer.toString(ret.size()+1), szTagName, szTag, szTxt));
@@ -1185,7 +1191,7 @@ public class FxHtml {
 	      	if ( bTag ) {
 	          szTag += c;
 	        }
-	        else {
+	        else if (!bTagEnd) {
 	          szTxt += c;
 	        }
 
@@ -1212,6 +1218,7 @@ public class FxHtml {
 		      else if ( c == '>' ) {
 		      	bTag = false;
 		      	bTagName = false;
+      			bTagEnd = szTag.startsWith("</");
 		      }
 		      else if ( c == ' ' ) {
 	          bTagName = false;
